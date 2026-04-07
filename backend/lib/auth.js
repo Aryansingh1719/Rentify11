@@ -55,8 +55,7 @@ export function setAuthCookie(res, token) {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
-    path: '/',
-    domain: 'https://rentify11.onrender.com' // 🔥 ADD THIS
+    path: '/', 🔥 ADD THIS
   });
 }
 
