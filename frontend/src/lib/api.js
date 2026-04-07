@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-const raw = process.env.NEXT_PUBLIC_API_URL || 'https://rentify-major.onrender.com';
+const raw = process.env.NEXT_PUBLIC_API_URL || 'https://rentify11.onrender.com';
 export const apiBaseUrl = raw.replace(/\/$/, '');
 
-const api = axios.create({
-  baseURL: apiBaseUrl,
-  withCredentials: true,
+const API = axios.create({
+  baseURL: "http://rentify11.onrender.com",
+  withCredentials: true   // 🔥 THIS IS THE FIX
 });
 
-export default api;
+export default API;

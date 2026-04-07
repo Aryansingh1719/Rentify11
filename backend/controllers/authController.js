@@ -513,8 +513,8 @@ export function googleAuthStart(req, res) {
 
   res.cookie('google_oauth_state', state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true,          // 🔥 force true in production
+    sameSite: 'none',      // 🔥 REQUIRED for cross-origin
     maxAge: 600000,
     path: '/',
   });

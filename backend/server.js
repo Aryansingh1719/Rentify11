@@ -25,7 +25,14 @@ const PORT = process.env.PORT || 5000;
 console.log("MONGO_URI:", process.env.MONGO_URI ? "Loaded ✅" : "Missing ❌");
 
 // ✅ CORS (safe fallback)
-app.use(cors(corsOptions || {}));
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://rentify11-aryan-s-projects-323c3d5d.vercel.app",
+    "https://rentify11.vercel.app", // 🔥 replace with your actual Vercel URL
+  ],
+  credentials: true
+}));
 
 // ✅ Stripe webhook (keep BEFORE express.json)
 app.post(
