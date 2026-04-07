@@ -3,7 +3,9 @@ import bcrypt from 'bcryptjs';
 import dbConnect from '../lib/mongodb.js';
 import User from '../models/User.js';
 import AuditLog from '../models/AuditLog.js';
-import { signToken, setAuthCookie, removeAuthCookie, getAuthUser } from '../lib/auth.js';
+// import { signToken, setAuthCookie, removeAuthCookie, getAuthUser } from '../lib/auth.js';
+import { signToken } from '../lib/auth.js';
+import jwt from 'jsonwebtoken';
 import { generateOTP, hashOTP, getOTPExpiry, verifyOTP } from '../lib/otp.js';
 import { sendVerificationEmail, sendLoginOTPEmail, sendPasswordResetEmail } from '../lib/email.js';
 import { generateResetToken, hashResetToken, getResetTokenExpiry } from '../lib/token.js';
@@ -172,12 +174,13 @@ export async function login(req, res) {
       role: user.role,
       sessionVersion: user.sessionVersion ?? 0,
     });
-    setAuthCookie(res, token);
+    // setAuthCookie(res, token);
 
     await AuditLog.create({ action: 'login', userId: user._id, email, ip, userAgent });
 
     return res.json({
       message: 'Login successful',
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -275,12 +278,13 @@ export async function verifyLoginOtp(req, res) {
       role: user.role,
       sessionVersion: user.sessionVersion ?? 0,
     });
-    setAuthCookie(res, token);
+    // setAuthCookie(res, token);
 
     await AuditLog.create({ action: 'login', userId: user._id, email, ip, userAgent, metadata: { via: 'otp' } });
 
     return res.json({
       message: 'Login successful',
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -295,7 +299,22 @@ export async function verifyLoginOtp(req, res) {
 
 export async function me(req, res) {
   try {
-    const user = await getAuthUser(req);
+    // const user = await getAuthUser(req);
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    await dbConnect();
+    const user = await User.findById(decoded.id).select('-password');
+
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
     if (!user) {
       return res.status(401).json({ message: 'Not authenticated' });
     }
@@ -306,7 +325,8 @@ export async function me(req, res) {
 }
 
 export async function logout(req, res) {
-  removeAuthCookie(res);
+  // removeAuthCookie(res);
+  return res.json({ message: 'Logout on client side' });
   return res.json({ message: 'Logged out successfully' });
 }
 
@@ -377,7 +397,8 @@ export async function resetPassword(req, res) {
       sessionVersion: (user.sessionVersion || 0) + 1,
     });
 
-    removeAuthCookie(res);
+    // removeAuthCookie(res);
+
     await AuditLog.create({ action: 'reset_success', userId: user._id, email: user.email, ip, userAgent });
 
     return res.json({
@@ -631,7 +652,7 @@ export async function googleAuthCallback(req, res) {
       role: user.role,
       sessionVersion: user.sessionVersion ?? 0,
     });
-    setAuthCookie(res, token);
+    // setAuthCookie(res, token);
 
     await AuditLog.create({
       action: 'login',
