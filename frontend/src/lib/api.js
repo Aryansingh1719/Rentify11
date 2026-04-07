@@ -4,7 +4,7 @@ const raw = process.env.NEXT_PUBLIC_API_URL || 'https://rentify11.onrender.com';
 export const apiBaseUrl = raw.replace(/\/$/, '');
 
 const API = axios.create({
-  baseURL: "http://rentify11.onrender.com",
+  baseURL: "https://rentify11.onrender.com",
   withCredentials: true   // 🔥 THIS IS THE FIX
 });
 
