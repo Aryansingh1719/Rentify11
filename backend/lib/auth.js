@@ -51,7 +51,13 @@ export async function getAuthUser(req) {
 }
 
 export function setAuthCookie(res, token) {
-  res.cookie('token', token, COOKIE_OPTS);
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    path: '/',
+    domain: 'rentify11.onrender.com' // 🔥 ADD THIS
+  });
 }
 
 export function removeAuthCookie(res) {
