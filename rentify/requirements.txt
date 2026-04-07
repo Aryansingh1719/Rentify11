@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+ultralytics
+pytesseract
+opencv-python
+numpy
+python-multipart
+streamlit
+pymongo
+google-generativeai 
+python-dotenv
+python-docx
+sentence-transformers
+faiss-cpu
+pydantic
+chromadb
+groq
