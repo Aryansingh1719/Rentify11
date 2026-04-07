@@ -20,7 +20,7 @@ process.on("unhandledRejection", (err) => {
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
+app.set("trust proxy", 1);
 // 🔍 DEBUG ENV (remove later)
 console.log("MONGO_URI:", process.env.MONGO_URI ? "Loaded ✅" : "Missing ❌");
 
