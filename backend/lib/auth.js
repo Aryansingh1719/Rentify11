@@ -55,7 +55,7 @@ export function setAuthCookie(res, token) {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
-    path: '/', 🔥 ADD THIS
+    path: '/',
   });
 }
 
