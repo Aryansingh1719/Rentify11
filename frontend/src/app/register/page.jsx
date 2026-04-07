@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import api, { apiBaseUrl } from '@/lib/api';
+import api, { APIBaseUrl } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
@@ -151,7 +151,7 @@ export default function RegisterPage() {
             </div>
 
             <a
-              href={`${apiBaseUrl}/api/auth/google`}
+              href={`${APIBaseUrl}/api/auth/google`}
               className="w-full py-3.5 px-4 rounded-2xl border border-border bg-card hover:bg-muted flex items-center justify-center gap-3 font-bold text-foreground transition-colors"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">

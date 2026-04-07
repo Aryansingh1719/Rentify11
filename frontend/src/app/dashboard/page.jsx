@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import api, { apiBaseUrl } from '@/lib/api';
+import api, { APIBaseUrl } from '@/lib/api';
 import { useSelector } from 'react-redux';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -141,7 +141,7 @@ export default function RenterDashboard() {
                       </td>
                       <td className="px-8 py-6 text-right">
                         <span className="flex items-center justify-end gap-3">
-                          <a href={`${apiBaseUrl}/api/rentals/${rental._id}/invoice`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground font-medium text-sm">Invoice</a>
+                          <a href={`${APIBaseUrl}/api/rentals/${rental._id}/invoice`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground font-medium text-sm">Invoice</a>
                           {rental.rentalStatus === 'completed' ? (
                             <button onClick={() => setReviewModal({ rental })} className="text-emerald-600 dark:text-cyan-400 font-bold text-sm hover:underline">Rate Product</button>
                           ) : (
