@@ -21,8 +21,13 @@ process.on("unhandledRejection", (err) => {
 const app = express();
 const PORT = process.env.PORT || 5000;
 app.set("trust proxy", 1);
+// 🔁 Normalize env var names so the app can accept either MONGO_URI or MONGODB_URI.
+// Some modules check only one of the two; this makes them consistent.
+process.env.MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
+process.env.MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
+
 // 🔍 DEBUG ENV (remove later)
-console.log("MONGO_URI:", process.env.MONGO_URI ? "Loaded ✅" : "Missing ❌");
+console.log("MONGODB_URI:", process.env.MONGODB_URI ? "Loaded ✅" : "Missing ❌");
 
 // ✅ CORS (safe fallback)
 app.use(cors({

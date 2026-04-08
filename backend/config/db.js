@@ -1,11 +1,12 @@
+import 'dotenv/config';
 import mongoose from 'mongoose';
 
 export async function connectDB() {
   try {
-    const MONGO_URI = process.env.MONGO_URI; // ✅ moved inside
+    const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI; // support both env names
 
     if (!MONGO_URI) {
-      throw new Error("MONGO_URI is not defined");
+      throw new Error('MongoDB URI not defined. Set MONGO_URI or MONGODB_URI in environment variables.');
     }
 
     console.log("🔄 Connecting to MongoDB...");
@@ -16,12 +17,13 @@ export async function connectDB() {
     });
 
     console.log(`✅ MongoDB connected (${conn.connection.host})`);
+    return conn;
 
   } catch (error) {
     console.error("❌ MongoDB connection error:");
     console.error(error.message);
 
-    process.exit(1); // ⛔ stop app properly
+    throw error;
   }
 }
 

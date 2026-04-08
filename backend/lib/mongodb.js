@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import mongoose from 'mongoose';
 
 const getUri = () => process.env.MONGO_URI || process.env.MONGODB_URI;
@@ -15,7 +16,7 @@ async function dbConnect() {
 
   const MONGODB_URI = getUri();
   if (!MONGODB_URI) {
-    throw new Error('Define MONGO_URI (or MONGODB_URI) in .env');
+    throw new Error('MongoDB URI not defined. Set MONGO_URI (preferred) or MONGODB_URI in environment variables.');
   }
 
   if (cached.conn) {
