@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useDispatch, useSelector } from 'react-redux';
@@ -62,7 +63,12 @@ export default function ProductCard({ product }) {
   const sellerName = typeof product.seller === 'object' && product.seller?.name;
   const sellerAvatar = typeof product.seller === 'object' && product.seller?.avatar;
   const sellerLocation = typeof product.seller === 'object' && product.seller?.location;
-  const availabilityBadge = getAvailabilityBadge(product);
+  const [availabilityBadge, setAvailabilityBadge] = useState(null);
+
+  // Avoid hydration mismatch: availability depends on "today" (Date), so compute after mount.
+  useEffect(() => {
+    setAvailabilityBadge(getAvailabilityBadge(product));
+  }, [product]);
 
   const cartProduct = {
     _id: product._id,
