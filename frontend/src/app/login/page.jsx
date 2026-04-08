@@ -83,11 +83,19 @@ export default function LoginPage() {
 
   const handleResendVerification = async () => {
     if (!unverifiedEmail) return;
+  
     setResendLoading(true);
+  
     try {
-      await api.post('/api/auth/resend-verification-otp', { email: unverifiedEmail });
+      await api.post('/api/auth/resend-verification-otp', {
+        email: unverifiedEmail,
+      });
+  
       toast.success('Verification code sent! Check your email.');
+  
+      // ✅ FIXED
       router.push(`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`);
+  
     } catch (err) {
       toast.error(err.response?.data?.message || 'Resend failed');
     } finally {
