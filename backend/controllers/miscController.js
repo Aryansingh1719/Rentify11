@@ -6,6 +6,29 @@ import Report from '../models/Report.js';
 import Product from '../models/Product.js';
 import { getAuthUser } from '../lib/auth.js';
 import cloudinary from '../lib/cloudinary.js';
+import { sendTestEmail } from '../lib/email.js';
+
+export async function testEmail(req, res) {
+  try {
+    const to = req.query?.to || process.env.TEST_EMAIL_TO;
+    if (!to) {
+      return res.status(400).json({ message: 'Missing recipient. Pass ?to=email@example.com or set TEST_EMAIL_TO.' });
+    }
+
+    console.log('[email.test] sending to', to);
+    const result = await sendTestEmail(to);
+    console.log('[email.test] result', result);
+
+    if (!result?.ok) {
+      return res.status(500).json({ success: false, message: 'Failed to send test email', result });
+    }
+
+    return res.json({ success: true, message: 'Test email sent', to, messageId: result.id || null });
+  } catch (error) {
+    console.error('[email.test] unexpected error', error);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to send test email' });
+  }
+}
 
 export async function chatbot(req, res) {
   const { aiChat } = await import('./aiController.js');

@@ -59,6 +59,7 @@ router.post('/api/ai/smart-analyze', smartAnalyzeUpload, aiController.aiSmartAna
 
 router.post('/api/chatbot', miscController.chatbot);
 router.post('/api/smart-listing', smartAnalyzeUpload, miscController.smartListing);
+router.get('/api/test-email', miscController.testEmail);
 
 router.post('/api/report', miscController.reportUser);
 

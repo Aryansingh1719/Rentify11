@@ -5,7 +5,8 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 const APP_NAME = process.env.APP_NAME || 'Rentify';
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.BASE_URL || 'http://localhost:3000';
-const FROM_EMAIL = process.env.FROM_EMAIL || process.env.EMAIL_USER;
+// For development without a verified domain, use Resend's testing sender.
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -18,7 +19,10 @@ async function sendWithRetry({ kind, from, to, subject, html, retries = 2, delay
   for (let attempt = 1; attempt <= retries; attempt++) {
     const start = Date.now();
     try {
+      console.log(`[email.${kind}] attempt ${attempt} -> to=${to} from=${from}`);
       const result = await resend.emails.send({ from, to, subject, html });
+      console.log(`[email.${kind}] resend response`, result);
+      console.log(`[email.${kind}] messageId`, result?.data?.id || null);
       console.log(`[email.${kind}] sent (attempt ${attempt}) in ${Date.now() - start}ms`);
       console.log(`[email.${kind}] total ${Date.now() - totalStart}ms`);
       return result;
@@ -170,5 +174,44 @@ export async function sendPasswordResetEmail(email, token) {
     });
   } catch (err) {
     console.error(`[email.${kind}] give up after retries`, err);
+  }
+}
+
+export async function sendTestEmail(email) {
+  const kind = 'test';
+  try {
+    if (!resend || !process.env.RESEND_API_KEY || !FROM_EMAIL) {
+      console.warn(`[email.${kind}] Resend not configured. Skipping email.`, { to: email });
+      return { ok: false, reason: 'resend_not_configured' };
+    }
+
+    const from = `"${APP_NAME}" <${FROM_EMAIL}>`;
+    const subject = `${APP_NAME} email delivery test`;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
+          <h2 style="margin-bottom: 8px;">Email delivery test</h2>
+          <p>This is a test message from <strong>${APP_NAME}</strong>.</p>
+          <p>If this reached your inbox, your Resend integration is working.</p>
+          <p style="color:#666;font-size:12px;">Sent at: ${new Date().toISOString()}</p>
+        </body>
+      </html>
+    `;
+
+    const result = await sendWithRetry({
+      kind,
+      from,
+      to: email,
+      subject,
+      html,
+      retries: parseInt(process.env.EMAIL_RETRY_COUNT || '2', 10),
+      delayMs: parseInt(process.env.EMAIL_RETRY_DELAY_MS || '1000', 10),
+    });
+
+    return { ok: true, id: result?.data?.id || null };
+  } catch (err) {
+    console.error(`[email.${kind}] give up after retries`, err);
+    return { ok: false, reason: err?.message || 'send_failed' };
   }
 }
