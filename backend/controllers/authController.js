@@ -32,7 +32,15 @@ function isStrongPassword(password) {
 }
 
 export async function register(req, res) {
+  const isProd = process.env.NODE_ENV === 'production';
+
   try {
+    // Basic env / configuration sanity checks – helps avoid opaque 500s in production.
+    if (!process.env.MONGODB_URI) {
+      console.error('[auth.register] Missing MONGODB_URI env');
+      return res.status(500).json({ message: 'Server misconfiguration: database URI not set' });
+    }
+
     await dbConnect();
     const { name, email, password, role } = req.body;
 
@@ -57,6 +65,7 @@ export async function register(req, res) {
     const hashedOtp = await hashOTP(otp);
     const otpExpiry = getOTPExpiry();
 
+    console.log('[auth.register] Creating user', email);
     const user = await User.create({
       name,
       email,
@@ -69,9 +78,22 @@ export async function register(req, res) {
       otpResendWindow: new Date(),
     });
 
-    await sendVerificationEmail(user.email, otp, 7);
+    if (!user) {
+      console.error('[auth.register] User.create returned null for', email);
+      return res.status(500).json({ message: 'Failed to create user account' });
+    }
+
+    console.log('[auth.register] User created, sending verification email', user.email);
+
+    try {
+      await sendVerificationEmail(user.email, otp, 7);
+    } catch (emailErr) {
+      console.error('[auth.register] Failed to send verification email', emailErr);
+      // We still return 201 so the account exists and the user can request a new code.
+    }
 
     return res.status(201).json({
+      success: true,
       message: 'Account created. Please verify your email.',
       redirect: '/verify-email',
       email: user.email,
@@ -84,7 +106,10 @@ export async function register(req, res) {
       },
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message || 'Internal server error' });
+    console.error('[auth.register] Unhandled error', error);
+    return res.status(500).json({
+      message: !isProd && (error?.message || error?.toString?.()) ? error.message || String(error) : 'Internal server error',
+    });
   }
 }
 
