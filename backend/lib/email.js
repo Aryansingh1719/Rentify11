@@ -1,41 +1,50 @@
-import { Resend } from 'resend';
-
-// Resend client is created once and reused for all requests.
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+import nodemailer from 'nodemailer';
 
 const APP_NAME = process.env.APP_NAME || 'Rentify';
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.BASE_URL || 'http://localhost:3000';
-// For development without a verified domain, use Resend's testing sender.
-const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587', 10);
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || SMTP_PORT === 465;
+const FROM_EMAIL = process.env.FROM_EMAIL || EMAIL_USER;
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+const transporter = nodemailer.createTransport({
+  host: SMTP_HOST,
+  port: SMTP_PORT,
+  secure: SMTP_SECURE,
+  auth: {
+    user: EMAIL_USER,
+    pass: EMAIL_PASS,
+  },
+});
 
-async function sendWithRetry({ kind, from, to, subject, html, retries = 2, delayMs = 1000 }) {
-  const totalStart = Date.now();
-  let lastErr = null;
+async function sendWithLogs({ kind, to, subject, text, html }) {
+  console.log(`[email.${kind}] called`, { to, subject });
 
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    const start = Date.now();
-    try {
-      console.log(`[email.${kind}] attempt ${attempt} -> to=${to} from=${from}`);
-      const result = await resend.emails.send({ from, to, subject, html });
-      console.log(`[email.${kind}] resend response`, result);
-      console.log(`[email.${kind}] messageId`, result?.data?.id || null);
-      console.log(`[email.${kind}] sent (attempt ${attempt}) in ${Date.now() - start}ms`);
-      console.log(`[email.${kind}] total ${Date.now() - totalStart}ms`);
-      return result;
-    } catch (err) {
-      lastErr = err;
-      console.error(`[email.${kind}] failed (attempt ${attempt}) in ${Date.now() - start}ms`, err);
-      if (attempt < retries) {
-        await sleep(delayMs * attempt);
-      }
-    }
+  if (!EMAIL_USER || !EMAIL_PASS) {
+    throw new Error('Email not configured. Set EMAIL_USER and EMAIL_PASS (App Password).');
+  }
+  if (!to) {
+    throw new Error('Recipient email is missing');
   }
 
-  throw lastErr;
+  const info = await transporter.sendMail({
+    from: `"${APP_NAME}" <${FROM_EMAIL}>`,
+    to,
+    subject,
+    text,
+    html,
+  });
+
+  console.log(`[email.${kind}] sent`, {
+    messageId: info.messageId,
+    accepted: info.accepted,
+    rejected: info.rejected,
+    response: info.response,
+  });
+
+  return info;
 }
 
 function getEmailTemplate(type, data) {
@@ -99,119 +108,64 @@ function getEmailTemplate(type, data) {
 
 export async function sendVerificationEmail(email, otp, expiryMinutes = 7) {
   const kind = 'verification';
+  const subject = `Verify your email - ${APP_NAME}`;
+  const text = `Your ${APP_NAME} verification code is ${otp}. It expires in ${expiryMinutes} minutes.`;
+  const html = getEmailTemplate('verification', { otp, expiryMinutes });
   try {
-    if (!resend || !process.env.RESEND_API_KEY || !FROM_EMAIL) {
-      console.warn(`[email.${kind}] Resend not configured. Skipping email.`, { to: email });
-      return;
-    }
-
-    const from = `"${APP_NAME}" <${FROM_EMAIL}>`;
-    const subject = `Verify your email - ${APP_NAME}`;
-    const html = getEmailTemplate('verification', { otp, expiryMinutes });
-
-    await sendWithRetry({
-      kind,
-      from,
-      to: email,
-      subject,
-      html,
-      retries: parseInt(process.env.EMAIL_RETRY_COUNT || '2', 10),
-      delayMs: parseInt(process.env.EMAIL_RETRY_DELAY_MS || '1000', 10),
-    });
+    return await sendWithLogs({ kind, to: email, subject, text, html });
   } catch (err) {
-    // Signup should never fail because of an email provider issue.
-    console.error(`[email.${kind}] give up after retries`, err);
+    console.error(`[email.${kind}] error`, err);
+    throw err;
   }
 }
 
 export async function sendLoginOTPEmail(email, otp) {
   const kind = 'login-otp';
+  const subject = `Your login code - ${APP_NAME}`;
+  const text = `Your ${APP_NAME} login code is ${otp}. It expires in 5 minutes.`;
+  const html = getEmailTemplate('login-otp', { otp });
   try {
-    if (!resend || !process.env.RESEND_API_KEY || !FROM_EMAIL) {
-      console.warn(`[email.${kind}] Resend not configured. Skipping email.`, { to: email });
-      return;
-    }
-
-    const from = `"${APP_NAME}" <${FROM_EMAIL}>`;
-    const subject = `Your login code - ${APP_NAME}`;
-    const html = getEmailTemplate('login-otp', { otp });
-
-    await sendWithRetry({
-      kind,
-      from,
-      to: email,
-      subject,
-      html,
-      retries: parseInt(process.env.EMAIL_RETRY_COUNT || '2', 10),
-      delayMs: parseInt(process.env.EMAIL_RETRY_DELAY_MS || '1000', 10),
-    });
+    return await sendWithLogs({ kind, to: email, subject, text, html });
   } catch (err) {
-    console.error(`[email.${kind}] give up after retries`, err);
+    console.error(`[email.${kind}] error`, err);
+    throw err;
   }
 }
 
 export async function sendPasswordResetEmail(email, token) {
   const kind = 'reset-password';
+  const resetUrl = `${BASE_URL}/reset-password?token=${token}`;
+  const subject = `Reset your password - ${APP_NAME}`;
+  const text = `Reset your ${APP_NAME} password here: ${resetUrl}`;
+  const html = getEmailTemplate('reset-password', { resetUrl });
   try {
-    if (!resend || !process.env.RESEND_API_KEY || !FROM_EMAIL) {
-      console.warn(`[email.${kind}] Resend not configured. Skipping email.`, { to: email });
-      return;
-    }
-
-    const resetUrl = `${BASE_URL}/reset-password?token=${token}`;
-    const from = `"${APP_NAME}" <${FROM_EMAIL}>`;
-    const subject = `Reset your password - ${APP_NAME}`;
-    const html = getEmailTemplate('reset-password', { resetUrl });
-
-    await sendWithRetry({
-      kind,
-      from,
-      to: email,
-      subject,
-      html,
-      retries: parseInt(process.env.EMAIL_RETRY_COUNT || '2', 10),
-      delayMs: parseInt(process.env.EMAIL_RETRY_DELAY_MS || '1000', 10),
-    });
+    return await sendWithLogs({ kind, to: email, subject, text, html });
   } catch (err) {
-    console.error(`[email.${kind}] give up after retries`, err);
+    console.error(`[email.${kind}] error`, err);
+    throw err;
   }
 }
 
 export async function sendTestEmail(email) {
   const kind = 'test';
+  const subject = `${APP_NAME} email delivery test`;
+  const text = `This is a test email from ${APP_NAME}. Sent at ${new Date().toISOString()}.`;
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
+        <h2 style="margin-bottom: 8px;">Email delivery test</h2>
+        <p>This is a test message from <strong>${APP_NAME}</strong>.</p>
+        <p>If this reached your inbox, SMTP configuration is working.</p>
+        <p style="color:#666;font-size:12px;">Sent at: ${new Date().toISOString()}</p>
+      </body>
+    </html>
+  `;
   try {
-    if (!resend || !process.env.RESEND_API_KEY || !FROM_EMAIL) {
-      console.warn(`[email.${kind}] Resend not configured. Skipping email.`, { to: email });
-      return { ok: false, reason: 'resend_not_configured' };
-    }
-
-    const from = `"${APP_NAME}" <${FROM_EMAIL}>`;
-    const subject = `${APP_NAME} email delivery test`;
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
-          <h2 style="margin-bottom: 8px;">Email delivery test</h2>
-          <p>This is a test message from <strong>${APP_NAME}</strong>.</p>
-          <p>If this reached your inbox, your Resend integration is working.</p>
-          <p style="color:#666;font-size:12px;">Sent at: ${new Date().toISOString()}</p>
-        </body>
-      </html>
-    `;
-
-    const result = await sendWithRetry({
-      kind,
-      from,
-      to: email,
-      subject,
-      html,
-      retries: parseInt(process.env.EMAIL_RETRY_COUNT || '2', 10),
-      delayMs: parseInt(process.env.EMAIL_RETRY_DELAY_MS || '1000', 10),
-    });
-
-    return { ok: true, id: result?.data?.id || null };
+    const info = await sendWithLogs({ kind, to: email, subject, text, html });
+    return { ok: true, id: info?.messageId || null };
   } catch (err) {
-    console.error(`[email.${kind}] give up after retries`, err);
+    console.error(`[email.${kind}] error`, err);
     return { ok: false, reason: err?.message || 'send_failed' };
   }
 }
