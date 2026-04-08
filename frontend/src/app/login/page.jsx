@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { setUser } from '@/store/slices/authSlice';
-import api, { APIBaseUrl } from '@/lib/api';
+import { fetchMe } from '@/store/slices/authSlice';
+import api, { APIBaseUrl, setAuthSession, clearAuthSession } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
@@ -48,6 +48,7 @@ export default function LoginPage() {
     e.preventDefault();
     setUnverifiedEmail(null);
     setLoading(true);
+    let storedToken = false;
     try {
       const res = await api.post('/api/auth/login', { email, password });
       if (res.data.requiresOtp) {
@@ -55,7 +56,11 @@ export default function LoginPage() {
         router.push(`/verify-login-otp?email=${encodeURIComponent(res.data.email || email)}`);
         return;
       }
-      dispatch(setUser(res.data.user));
+      if (res.data.token) {
+        setAuthSession(res.data.token);
+        storedToken = true;
+      }
+      await dispatch(fetchMe()).unwrap();
       toast.success('Welcome back!');
       if (res.data.user?.role === 'renter') {
         router.push('/discover');
@@ -63,6 +68,7 @@ export default function LoginPage() {
         router.push('/dashboard');
       }
     } catch (err) {
+      if (storedToken) clearAuthSession();
       const data = err.response?.data;
       if (data?.requiresVerification) {
         setUnverifiedEmail(data?.email || email);

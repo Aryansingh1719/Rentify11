@@ -2,8 +2,8 @@
 
 import { useState, useRef } from 'react';
 import { useDispatch } from 'react-redux';
-import { setUser } from '@/store/slices/authSlice';
-import api from '@/lib/api';
+import { fetchMe } from '@/store/slices/authSlice';
+import api, { setAuthSession, clearAuthSession } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
@@ -58,16 +58,22 @@ export default function VerifyLoginOTPPage() {
       return;
     }
     setLoading(true);
+    let storedToken = false;
     try {
       const res = await api.post('/api/auth/verify-login-otp', { email, otp: code });
       toast.success(res.data.message || 'Signed in!');
-      dispatch(setUser(res.data.user));
+      if (res.data.token) {
+        setAuthSession(res.data.token);
+        storedToken = true;
+      }
+      await dispatch(fetchMe()).unwrap();
       if (res.data.user?.role === 'renter') {
         router.push('/discover');
       } else {
         router.push('/dashboard');
       }
     } catch (err) {
+      if (storedToken) clearAuthSession();
       toast.error(err.response?.data?.message || 'Verification failed');
     } finally {
       setLoading(false);

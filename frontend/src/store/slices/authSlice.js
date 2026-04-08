@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '@/lib/api';
+import api, { clearAuthSession } from '@/lib/api';
 
 export const fetchMe = createAsyncThunk('auth/fetchMe', async () => {
   const response = await api.get('/api/auth/me');
@@ -7,7 +7,13 @@ export const fetchMe = createAsyncThunk('auth/fetchMe', async () => {
 });
 
 export const logout = createAsyncThunk('auth/logout', async () => {
-  await api.post('/api/auth/logout');
+  try {
+    await api.post('/api/auth/logout');
+  } catch {
+    // still clear client session
+  } finally {
+    clearAuthSession();
+  }
   return null;
 });
 

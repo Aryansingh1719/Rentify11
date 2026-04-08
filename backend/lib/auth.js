@@ -32,8 +32,16 @@ export function verifyToken(token) {
   }
 }
 
+function extractBearerToken(req) {
+  const raw = req.headers?.authorization || req.headers?.Authorization;
+  if (!raw || typeof raw !== 'string') return null;
+  const m = raw.match(/^Bearer\s+(.+)$/i);
+  return m ? m[1].trim() : null;
+}
+
 export async function getAuthUser(req) {
-  const token = req.cookies?.token;
+  let token = extractBearerToken(req);
+  if (!token) token = req.cookies?.token;
 
   if (!token) return null;
 

@@ -178,6 +178,7 @@ export async function login(req, res) {
 
     return res.json({
       message: 'Login successful',
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -281,6 +282,7 @@ export async function verifyLoginOtp(req, res) {
 
     return res.json({
       message: 'Login successful',
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -642,9 +644,11 @@ export async function googleAuthCallback(req, res) {
       metadata: { provider: 'google' },
     });
 
-    const redirectUrl = user.role === 'renter' ? '/discover' : '/dashboard';
+    // Land on a public route first so middleware runs before client sets the app-origin token cookie.
+    const dest = new URL('/', base);
+    dest.hash = `token=${encodeURIComponent(token)}`;
     res.clearCookie('google_oauth_state', { path: '/' });
-    return res.redirect(new URL(redirectUrl, base).toString());
+    return res.redirect(dest.toString());
   } catch (err) {
     console.error('Google OAuth callback error:', err);
     return redirectToLogin('server_error');
