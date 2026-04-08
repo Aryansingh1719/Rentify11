@@ -1,7 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api, { clearAuthSession } from '@/lib/api';
+import api, { clearAuthSession, AUTH_TOKEN_KEY } from '@/lib/api';
 
 export const fetchMe = createAsyncThunk('auth/fetchMe', async () => {
+  if (typeof window === 'undefined') return null;
+  const t = localStorage.getItem(AUTH_TOKEN_KEY);
+  if (!t) return null;
   const response = await api.get('/api/auth/me');
   return response.data.user;
 });

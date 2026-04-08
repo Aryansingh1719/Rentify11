@@ -3,10 +3,23 @@ import axios from "axios";
 /** Same key as Next middleware: enables protected routes after login on the app origin. */
 export const AUTH_TOKEN_KEY = "token";
 
-const baseURL =
-  process.env.NEXT_PUBLIC_API_URL || "https://rentify11.onrender.com";
+const DEFAULT_API_ORIGIN = "https://rentify11.onrender.com";
 
-export const APIBaseUrl = baseURL.replace(/\/$/, "");
+/** Avoids https://host/api + /api/... → /api/api/... when env is set to .../api */
+function normalizeApiOrigin(url) {
+  if (!url || typeof url !== "string") return DEFAULT_API_ORIGIN;
+  let u = url.trim().replace(/\/+$/, "");
+  if (u.endsWith("/api")) u = u.slice(0, -4);
+  return u;
+}
+
+export function getApiBaseUrl() {
+  return normalizeApiOrigin(process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_ORIGIN);
+}
+
+const baseURL = getApiBaseUrl();
+
+export const APIBaseUrl = baseURL;
 
 const api = axios.create({
   baseURL,
@@ -35,5 +48,18 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (typeof window !== "undefined" && err.response?.status === 401) {
+      const path = err.config?.url || "";
+      if (path.includes("/api/auth/me")) {
+        clearAuthSession();
+      }
+    }
+    return Promise.reject(err);
+  }
+);
 
 export default api;

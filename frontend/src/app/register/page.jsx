@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import api, { APIBaseUrl } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -45,8 +45,12 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const res = await api.post('/api/auth/register', { name, email, password, role });
-      toast.success(res.data.message || 'Check your email to verify your account');
-      router.push(`/verify-email?email=${encodeURIComponent(res.data.email || email)}`);
+      const targetEmail = res.data?.email ?? email;
+      const verifyPath = `/verify-email?email=${encodeURIComponent(targetEmail)}`;
+      toast.success(res.data?.message || 'Check your email to verify your account');
+      startTransition(() => {
+        router.push(verifyPath);
+      });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
     } finally {

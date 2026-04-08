@@ -1,11 +1,11 @@
-const apiUrl =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+import { getApiBaseUrl } from '@/lib/api';
 
 export async function generateMetadata({ params }) {
   try {
     const resolvedParams = typeof params.then === 'function' ? await params : params;
     const { id } = resolvedParams;
-    const res = await fetch(`${apiUrl.replace(/\/$/, '')}/api/seller/${id}`, { next: { revalidate: 60 } });
+    const base = getApiBaseUrl();
+    const res = await fetch(`${base}/api/seller/${id}`, { next: { revalidate: 60 } });
     if (!res.ok) return { title: 'Seller | LuxeRent' };
     const data = await res.json();
     const seller = data.seller || {};
