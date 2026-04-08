@@ -21,7 +21,8 @@ const authSlice = createSlice({
   name: 'auth',
   initialState: {
     user: null,
-    loading: false,
+    /** True until the first fetchMe attempt finishes — avoids treating user as logged out during bootstrap. */
+    loading: true,
     error: null,
   },
   reducers: {

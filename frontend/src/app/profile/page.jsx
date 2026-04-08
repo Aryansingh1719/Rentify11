@@ -8,7 +8,17 @@ import { motion } from 'framer-motion';
 import { User, Mail, Calendar, CreditCard } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user } = useSelector((state) => state.auth);
+  const { user, loading: authLoading } = useSelector((state) => state.auth);
+
+  if (authLoading) {
+    return (
+      <main className="min-h-screen bg-background">
+        <Navbar />
+        <div className="max-w-2xl mx-auto px-4 pt-32 pb-20 text-center text-muted-foreground">Loading…</div>
+        <Footer />
+      </main>
+    );
+  }
 
   if (!user) {
     return (

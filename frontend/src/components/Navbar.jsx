@@ -12,7 +12,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Navbar() {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+  const { user, loading: authLoading } = useSelector((state) => state.auth);
   const cartCount = useSelector((state) => state.cart.items.length);
   const [isOpen, setIsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -64,7 +64,9 @@ export default function Navbar() {
           </div>
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            {user ? (
+            {authLoading ? (
+              <div className="w-[200px] h-10 shrink-0" aria-hidden="true" />
+            ) : user ? (
               <>
                 <Link href="/cart" className="relative p-2 rounded-xl hover:bg-secondary transition-colors">
                   <ShoppingCart size={22} className="text-muted-foreground" />
@@ -140,7 +142,9 @@ export default function Navbar() {
               </>
             )}
             <div className="pt-4 border-t border-border">
-              {user ? (
+              {authLoading ? (
+                <div className="h-12" aria-hidden="true" />
+              ) : user ? (
                 <button onClick={() => { handleLogout(); setIsOpen(false); }} className="w-full flex items-center justify-center gap-2 py-3 bg-destructive/10 text-destructive rounded-xl font-bold">
                   <LogOut size={20} /> Logout
                 </button>

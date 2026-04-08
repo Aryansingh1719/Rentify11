@@ -41,7 +41,7 @@ const DAMAGE_PROTECTION_FEE = 2.99;
 export default function CheckoutPage() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+  const { user, loading: authLoading } = useSelector((state) => state.auth);
   const { items } = useSelector((state) => state.cart);
 
   const [step, setStep] = useState(1);
@@ -71,6 +71,7 @@ export default function CheckoutPage() {
   const anyAllowPickup = Object.values(productsExtra).some((p) => p?.allowPickup);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       router.push('/login');
       return;
@@ -103,7 +104,7 @@ export default function CheckoutPage() {
       }
     };
     load();
-  }, [user, items.length, router]);
+  }, [user, authLoading, items.length, router]);
 
   const handleSaveAddress = async (e) => {
     e.preventDefault();

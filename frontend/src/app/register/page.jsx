@@ -70,12 +70,14 @@ export default function RegisterPage() {
 
           <div className="flex p-1 bg-muted rounded-2xl mb-8">
             <button
+              type="button"
               onClick={() => setRole('renter')}
               className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${role === 'renter' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Renter
             </button>
             <button
+              type="button"
               onClick={() => setRole('seller')}
               className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${role === 'seller' ? 'bg-card text-emerald-600 dark:text-cyan-400 shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
@@ -85,11 +87,14 @@ export default function RegisterPage() {
 
           <form onSubmit={handleRegister} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-bold text-foreground ml-1">Full Name</label>
+              <label htmlFor="register-name" className="text-sm font-bold text-foreground ml-1">Full Name</label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
+                  id="register-name"
+                  name="name"
                   type="text"
+                  autoComplete="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 bg-input border border-border rounded-2xl focus:ring-2 focus:ring-ring focus:border-transparent transition-all outline-none text-foreground placeholder:text-muted-foreground"
@@ -100,11 +105,14 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-foreground ml-1">Email Address</label>
+              <label htmlFor="register-email" className="text-sm font-bold text-foreground ml-1">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
+                  id="register-email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 bg-input border border-border rounded-2xl focus:ring-2 focus:ring-ring focus:border-transparent transition-all outline-none text-foreground placeholder:text-muted-foreground"
@@ -115,11 +123,14 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-foreground ml-1">Password</label>
+              <label htmlFor="register-password" className="text-sm font-bold text-foreground ml-1">Password</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
+                  id="register-password"
+                  name="password"
                   type="password"
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 bg-input border border-border rounded-2xl focus:ring-2 focus:ring-ring focus:border-transparent transition-all outline-none text-foreground placeholder:text-muted-foreground"

@@ -21,7 +21,7 @@ export default function ProductDetailsPage() {
   const id = params?.id;
   const router = useRouter();
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+  const { user, loading: authLoading } = useSelector((state) => state.auth);
   const inWishlist = id ? useSelector((s) => s.wishlist.productIds.includes(id)) : false;
   const recentIds = useSelector((s) => s.recentlyViewed.productIds).filter((pid) => pid !== id);
   const [recentProducts, setRecentProducts] = useState([]);
@@ -73,6 +73,7 @@ export default function ProductDetailsPage() {
   }, [id]);
 
   const handleBooking = async () => {
+    if (authLoading) return;
     if (!user) {
       toast.error('Please login to rent');
       return router.push('/login');

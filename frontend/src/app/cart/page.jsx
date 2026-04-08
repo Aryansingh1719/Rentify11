@@ -30,12 +30,13 @@ function getTotalForItem(item) {
 export default function CartPage() {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { user } = useSelector((state) => state.auth);
+  const { user, loading: authLoading } = useSelector((state) => state.auth);
   const { items } = useSelector((state) => state.cart);
 
   const subtotal = items.reduce((sum, it) => sum + getTotalForItem(it), 0);
 
   const handleCheckout = () => {
+    if (authLoading) return;
     if (!user) {
       toast.error('Please login to checkout');
       return router.push('/login');

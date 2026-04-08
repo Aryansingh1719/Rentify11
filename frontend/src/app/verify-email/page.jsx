@@ -110,11 +110,14 @@ export default function VerifyEmailPage() {
 
           <form onSubmit={handleVerify} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-bold text-foreground ml-1">Email Address</label>
+              <label htmlFor="verify-email-address" className="text-sm font-bold text-foreground ml-1">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
+                  id="verify-email-address"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 bg-input border border-border rounded-2xl focus:ring-2 focus:ring-ring transition-all outline-none text-foreground placeholder:text-muted-foreground"
@@ -133,9 +136,12 @@ export default function VerifyEmailPage() {
                 {otp.map((digit, i) => (
                   <input
                     key={i}
+                    id={`verify-email-otp-${i}`}
+                    name={`otp-${i}`}
                     ref={(el) => inputRefs.current[i] = el}
                     type="text"
                     inputMode="numeric"
+                    autoComplete={i === 0 ? 'one-time-code' : 'off'}
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleOtpChange(i, e.target.value)}
