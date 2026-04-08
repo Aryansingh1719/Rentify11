@@ -435,7 +435,7 @@ export default function SellerShopPage() {
                               </div>
                             </div>
                             <span className="text-xs text-muted-foreground flex-shrink-0">
-                              {new Date(review.createdAt).toLocaleDateString()}
+                              {new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </span>
                           </div>
                           <p className="text-muted-foreground text-sm">{review.comment}</p>
@@ -460,7 +460,7 @@ export default function SellerShopPage() {
                                 </span>
                                 {review.sellerReply.createdAt && (
                                   <span className="text-[10px] text-muted-foreground">
-                                    {new Date(review.sellerReply.createdAt).toLocaleDateString()}
+                                    {new Date(review.sellerReply.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                   </span>
                                 )}
                               </div>

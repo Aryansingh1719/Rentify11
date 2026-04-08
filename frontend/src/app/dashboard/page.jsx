@@ -126,7 +126,7 @@ export default function RenterDashboard() {
                         </div>
                       </td>
                       <td className="px-8 py-6 text-sm text-muted-foreground font-medium">
-                        {new Date(rental.startDate).toLocaleDateString()} - {new Date(rental.endDate).toLocaleDateString()}
+                        {new Date(rental.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - {new Date(rental.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
                       <td className="px-8 py-6 font-black text-foreground">${rental.totalAmount}</td>
                       <td className="px-8 py-6">

@@ -243,7 +243,7 @@ export default function ProductDetailsPage() {
                 <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1">
                   {availability.slice(0, 5).map((b, i) => (
                     <li key={i}>
-                      {new Date(b.startDate).toLocaleDateString()} – {new Date(b.endDate).toLocaleDateString()}
+                      {new Date(b.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – {new Date(b.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </li>
                   ))}
                   {availability.length > 5 && <li>+{availability.length - 5} more</li>}

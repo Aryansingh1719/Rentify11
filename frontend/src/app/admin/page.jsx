@@ -302,7 +302,7 @@ export default function AdminDashboard() {
                           {u.isBlocked ? 'Blocked' : 'Active'}
                         </span>
                       </td>
-                      <td className="px-8 py-6 text-sm text-muted-foreground font-medium">{new Date(u.joinedAt).toLocaleDateString()}</td>
+                      <td className="px-8 py-6 text-sm text-muted-foreground font-medium">{new Date(u.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
                       <td className="px-8 py-6 text-right space-x-3">
                         {!u.isVerified && (
                           <button
@@ -361,7 +361,7 @@ export default function AdminDashboard() {
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {row.count} report{row.count !== 1 ? 's' : ''} • Last on{' '}
-                        {row.lastReportAt ? new Date(row.lastReportAt).toLocaleDateString() : '—'}
+                        {row.lastReportAt ? new Date(row.lastReportAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                       </p>
                     </div>
                     <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-wider">
@@ -383,7 +383,7 @@ export default function AdminDashboard() {
                 {reports.reports.map((r) => (
                   <div key={r._id} className="p-6 space-y-1">
                     <p className="text-xs text-gray-400">
-                      {new Date(r.createdAt).toLocaleString()}
+                      {new Date(r.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                     </p>
                     <p className="text-sm font-medium text-gray-800">
                       Reporter:{' '}

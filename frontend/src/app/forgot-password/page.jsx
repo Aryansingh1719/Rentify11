@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
             >
               Back to Sign In <ArrowRight size={18} />
             </Link>
-            <p className="mt-8 text-sm text-muted-foreground">
+            <div className="mt-8 text-sm text-muted-foreground">
               Didn&apos;t receive the email?{' '}
               <button
                 type="button"
@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
               >
                 Try again
               </button>
-            </p>
+            </div>
           </motion.div>
         </div>
         <Footer />

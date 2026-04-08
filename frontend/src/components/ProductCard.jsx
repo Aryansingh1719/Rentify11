@@ -44,7 +44,7 @@ function getAvailabilityBadge(product) {
   if (earliestFutureEnd) {
     const nextAvailable = new Date(earliestFutureEnd);
     nextAvailable.setDate(nextAvailable.getDate() + 1);
-    const formatted = nextAvailable.toLocaleDateString(undefined, {
+    const formatted = nextAvailable.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });
@@ -110,15 +110,15 @@ export default function ProductCard({ product }) {
       whileHover={{ y: -4 }}
       className="group bg-card rounded-3xl overflow-hidden border border-border hover:shadow-xl dark:hover:shadow-black/30 transition-all duration-300"
     >
-      <Link href={`/products/${product._id}`}>
-        <div className="relative aspect-[4/5] overflow-hidden bg-muted">
+      <div className="relative aspect-[4/5] overflow-hidden bg-muted">
+        <Link href={`/products/${product._id}`} className="absolute inset-0 block">
           <Image
             src={product.images?.[0] || '/placeholder-avatar.svg'}
             alt={product.title}
             fill
             className="object-cover transition-transform duration-700 group-hover:scale-110"
           />
-          <div className="absolute top-4 left-4 flex flex-col gap-2">
+          <div className="absolute top-4 left-4 z-[1] flex flex-col gap-2">
             <span className="px-3 py-1 bg-card/90 backdrop-blur-md rounded-full text-xs font-bold text-foreground shadow-sm">
               {product.category}
             </span>
@@ -134,14 +134,16 @@ export default function ProductCard({ product }) {
               </span>
             )}
           </div>
-          <button
-            onClick={handleWishlist}
-            className="absolute top-4 right-4 p-2 rounded-full bg-card/90 backdrop-blur-md shadow-sm hover:bg-card"
-          >
-            <Heart size={18} className={inWishlist ? 'fill-red-500 text-red-500' : 'text-muted-foreground'} />
-          </button>
-        </div>
-      </Link>
+        </Link>
+        <button
+          type="button"
+          onClick={handleWishlist}
+          className="absolute top-4 right-4 z-[2] p-2 rounded-full bg-card/90 backdrop-blur-md shadow-sm hover:bg-card"
+          aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+        >
+          <Heart size={18} className={inWishlist ? 'fill-red-500 text-red-500' : 'text-muted-foreground'} />
+        </button>
+      </div>
 
       <div className="p-6">
         <div className="flex justify-between items-start mb-2">
