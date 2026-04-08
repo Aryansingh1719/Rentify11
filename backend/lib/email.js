@@ -1,17 +1,38 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587', 10),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// Resend client is created once and reused for all requests.
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const APP_NAME = process.env.APP_NAME || 'Rentify';
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.BASE_URL || 'http://localhost:3000';
+const FROM_EMAIL = process.env.FROM_EMAIL || process.env.EMAIL_USER;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function sendWithRetry({ kind, from, to, subject, html, retries = 2, delayMs = 1000 }) {
+  const totalStart = Date.now();
+  let lastErr = null;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const start = Date.now();
+    try {
+      const result = await resend.emails.send({ from, to, subject, html });
+      console.log(`[email.${kind}] sent (attempt ${attempt}) in ${Date.now() - start}ms`);
+      console.log(`[email.${kind}] total ${Date.now() - totalStart}ms`);
+      return result;
+    } catch (err) {
+      lastErr = err;
+      console.error(`[email.${kind}] failed (attempt ${attempt}) in ${Date.now() - start}ms`, err);
+      if (attempt < retries) {
+        await sleep(delayMs * attempt);
+      }
+    }
+  }
+
+  throw lastErr;
+}
 
 function getEmailTemplate(type, data) {
   const styles = `
@@ -73,41 +94,81 @@ function getEmailTemplate(type, data) {
 }
 
 export async function sendVerificationEmail(email, otp, expiryMinutes = 7) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn('Email not configured. OTP:', otp);
-    return;
+  const kind = 'verification';
+  try {
+    if (!resend || !process.env.RESEND_API_KEY || !FROM_EMAIL) {
+      console.warn(`[email.${kind}] Resend not configured. Skipping email.`, { to: email });
+      return;
+    }
+
+    const from = `"${APP_NAME}" <${FROM_EMAIL}>`;
+    const subject = `Verify your email - ${APP_NAME}`;
+    const html = getEmailTemplate('verification', { otp, expiryMinutes });
+
+    await sendWithRetry({
+      kind,
+      from,
+      to: email,
+      subject,
+      html,
+      retries: parseInt(process.env.EMAIL_RETRY_COUNT || '2', 10),
+      delayMs: parseInt(process.env.EMAIL_RETRY_DELAY_MS || '1000', 10),
+    });
+  } catch (err) {
+    // Signup should never fail because of an email provider issue.
+    console.error(`[email.${kind}] give up after retries`, err);
   }
-  await transporter.sendMail({
-    from: `"${APP_NAME}" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: `Verify your email - ${APP_NAME}`,
-    html: getEmailTemplate('verification', { otp, expiryMinutes }),
-  });
 }
 
 export async function sendLoginOTPEmail(email, otp) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn('Email not configured. OTP:', otp);
-    return;
+  const kind = 'login-otp';
+  try {
+    if (!resend || !process.env.RESEND_API_KEY || !FROM_EMAIL) {
+      console.warn(`[email.${kind}] Resend not configured. Skipping email.`, { to: email });
+      return;
+    }
+
+    const from = `"${APP_NAME}" <${FROM_EMAIL}>`;
+    const subject = `Your login code - ${APP_NAME}`;
+    const html = getEmailTemplate('login-otp', { otp });
+
+    await sendWithRetry({
+      kind,
+      from,
+      to: email,
+      subject,
+      html,
+      retries: parseInt(process.env.EMAIL_RETRY_COUNT || '2', 10),
+      delayMs: parseInt(process.env.EMAIL_RETRY_DELAY_MS || '1000', 10),
+    });
+  } catch (err) {
+    console.error(`[email.${kind}] give up after retries`, err);
   }
-  await transporter.sendMail({
-    from: `"${APP_NAME}" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: `Your login code - ${APP_NAME}`,
-    html: getEmailTemplate('login-otp', { otp }),
-  });
 }
 
 export async function sendPasswordResetEmail(email, token) {
-  const resetUrl = `${BASE_URL}/reset-password?token=${token}`;
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn('Email not configured. Reset URL:', resetUrl);
-    return;
+  const kind = 'reset-password';
+  try {
+    if (!resend || !process.env.RESEND_API_KEY || !FROM_EMAIL) {
+      console.warn(`[email.${kind}] Resend not configured. Skipping email.`, { to: email });
+      return;
+    }
+
+    const resetUrl = `${BASE_URL}/reset-password?token=${token}`;
+    const from = `"${APP_NAME}" <${FROM_EMAIL}>`;
+    const subject = `Reset your password - ${APP_NAME}`;
+    const html = getEmailTemplate('reset-password', { resetUrl });
+
+    await sendWithRetry({
+      kind,
+      from,
+      to: email,
+      subject,
+      html,
+      retries: parseInt(process.env.EMAIL_RETRY_COUNT || '2', 10),
+      delayMs: parseInt(process.env.EMAIL_RETRY_DELAY_MS || '1000', 10),
+    });
+  } catch (err) {
+    console.error(`[email.${kind}] give up after retries`, err);
   }
-  await transporter.sendMail({
-    from: `"${APP_NAME}" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: `Reset your password - ${APP_NAME}`,
-    html: getEmailTemplate('reset-password', { resetUrl }),
-  });
 }

@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js"
-  
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -21,6 +20,7 @@
     "multer": "^2.0.2",
     "nodemailer": "^8.0.4",
     "pdfkit": "^0.15.0",
+    "resend": "^6.10.0",
     "stripe": "^20.2.0"
   },
   "devDependencies": {
