@@ -20,6 +20,10 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "LuxeRent | Premium Rental Marketplace",
   description: "Rent premium products from verified sellers.",
+  icons: {
+    icon: "/placeholder-avatar.svg",
+    shortcut: "/placeholder-avatar.svg",
+  },
 };
 
 export default function RootLayout({ children }) {

@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';
 import apiRoutes from './routes/index.js';
 import { stripeWebhook } from './controllers/webhookController.js';
+import { corsOptions } from './middleware/corsConfig.js';
 
 process.on("uncaughtException", (err) => {
   console.error("❌ UNCAUGHT EXCEPTION:", err);
@@ -26,27 +27,8 @@ process.env.MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
 
 console.log("MONGODB_URI:", process.env.MONGODB_URI ? "Loaded ✅" : "Missing ❌");
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://rentify11-aryan-s-projects-323c3d5d.vercel.app",
-  "https://rentify11.vercel.app"
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Postman / mobile apps
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      console.error("❌ Blocked by CORS:", origin);
-      return callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-}));
-
-app.options("*", cors());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 
 app.post(
