@@ -60,9 +60,12 @@ export default function RegisterPage() {
       toast.success(res.data?.message || 'Check your email to verify your account');
 
       // ✅ FIXED: Direct navigation (no startTransition)
-      router.push(verifyPath);
-      router.refresh(); // 🔥 ensures UI updates properly
-
+      // router.push(verifyPath);
+      // router.refresh(); // 🔥 ensures UI updates properly
+      setTimeout(() => {
+        router.push(verifyPath);
+      }, 100);
+      
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
     } finally {
