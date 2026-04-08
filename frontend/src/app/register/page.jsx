@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, startTransition } from 'react';
+import { useState, useEffect } from 'react';
 import api, { APIBaseUrl } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -20,6 +20,7 @@ const ERROR_MESSAGES = {
   account_blocked: 'This account has been blocked.',
   server_error: 'Something went wrong. Please try again.',
 };
+
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -29,6 +30,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('renter');
   const [loading, setLoading] = useState(false);
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -43,14 +45,24 @@ export default function RegisterPage() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-      const res = await api.post('/api/auth/register', { name, email, password, role });
+      const res = await api.post('/api/auth/register', {
+        name,
+        email,
+        password,
+        role,
+      });
+
       const targetEmail = res.data?.email ?? email;
       const verifyPath = `/verify-email?email=${encodeURIComponent(targetEmail)}`;
+
       toast.success(res.data?.message || 'Check your email to verify your account');
-      startTransition(() => {
-        router.push(verifyPath);
-      });
+
+      // ✅ FIXED: Direct navigation (no startTransition)
+      router.push(verifyPath);
+      router.refresh(); // 🔥 ensures UI updates properly
+
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -61,6 +73,7 @@ export default function RegisterPage() {
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
+
       <div className="flex items-center justify-center min-h-screen pt-24 px-4 pb-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -68,30 +81,49 @@ export default function RegisterPage() {
           className="max-w-md w-full bg-card rounded-[40px] shadow-xl dark:shadow-black/40 p-10 border border-border"
         >
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-black tracking-tighter text-foreground mb-2">Create Account</h1>
-            <p className="text-muted-foreground">Join the premium rental community today</p>
+            <h1 className="text-3xl font-black tracking-tighter text-foreground mb-2">
+              Create Account
+            </h1>
+            <p className="text-muted-foreground">
+              Join the premium rental community today
+            </p>
           </div>
 
+          {/* Role Toggle */}
           <div className="flex p-1 bg-muted rounded-2xl mb-8">
             <button
               type="button"
               onClick={() => setRole('renter')}
-              className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${role === 'renter' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+                role === 'renter'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
               Renter
             </button>
+
             <button
               type="button"
               onClick={() => setRole('seller')}
-              className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${role === 'seller' ? 'bg-card text-emerald-600 dark:text-cyan-400 shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+                role === 'seller'
+                  ? 'bg-card text-emerald-600 dark:text-cyan-400 shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
               Seller
             </button>
           </div>
 
+          {/* FORM */}
           <form onSubmit={handleRegister} className="space-y-6">
+
+            {/* NAME */}
             <div className="space-y-2">
-              <label htmlFor="register-name" className="text-sm font-bold text-foreground ml-1">Full Name</label>
+              <label htmlFor="register-name" className="text-sm font-bold text-foreground ml-1">
+                Full Name
+              </label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
@@ -101,15 +133,18 @@ export default function RegisterPage() {
                   autoComplete="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-input border border-border rounded-2xl focus:ring-2 focus:ring-ring focus:border-transparent transition-all outline-none text-foreground placeholder:text-muted-foreground"
+                  className="w-full pl-12 pr-4 py-4 bg-input border border-border rounded-2xl outline-none"
                   placeholder="John Doe"
                   required
                 />
               </div>
             </div>
 
+            {/* EMAIL */}
             <div className="space-y-2">
-              <label htmlFor="register-email" className="text-sm font-bold text-foreground ml-1">Email Address</label>
+              <label htmlFor="register-email" className="text-sm font-bold text-foreground ml-1">
+                Email Address
+              </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
@@ -119,15 +154,18 @@ export default function RegisterPage() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-input border border-border rounded-2xl focus:ring-2 focus:ring-ring focus:border-transparent transition-all outline-none text-foreground placeholder:text-muted-foreground"
+                  className="w-full pl-12 pr-4 py-4 bg-input border border-border rounded-2xl outline-none"
                   placeholder="name@example.com"
                   required
                 />
               </div>
             </div>
 
+            {/* PASSWORD */}
             <div className="space-y-2">
-              <label htmlFor="register-password" className="text-sm font-bold text-foreground ml-1">Password</label>
+              <label htmlFor="register-password" className="text-sm font-bold text-foreground ml-1">
+                Password
+              </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
@@ -137,58 +175,49 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-input border border-border rounded-2xl focus:ring-2 focus:ring-ring focus:border-transparent transition-all outline-none text-foreground placeholder:text-muted-foreground"
+                  className="w-full pl-12 pr-4 py-4 bg-input border border-border rounded-2xl outline-none"
                   placeholder="••••••••"
                   required
                 />
               </div>
             </div>
 
+            {/* BUTTON */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-xl disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {loading ? <Loader2 className="animate-spin" size={20} /> : (
+              {loading ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
                 <>
                   Create Account <ArrowRight size={18} />
                 </>
               )}
             </button>
 
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-card text-muted-foreground">or</span>
-              </div>
-            </div>
-
+            {/* GOOGLE */}
             <a
               href={`${APIBaseUrl}/api/auth/google`}
-              className="w-full py-3.5 px-4 rounded-2xl border border-border bg-card hover:bg-muted flex items-center justify-center gap-3 font-bold text-foreground transition-colors"
+              className="w-full py-3.5 px-4 rounded-2xl border border-border flex items-center justify-center gap-3 font-bold"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
               Continue with Google
             </a>
           </form>
 
+          {/* LOGIN LINK */}
           <div className="mt-8 text-center text-sm">
             <p className="text-muted-foreground">
               Already have an account?{' '}
-              <Link href="/login" className="text-emerald-600 dark:text-cyan-400 font-bold hover:underline">
+              <Link href="/login" className="font-bold hover:underline">
                 Sign In
               </Link>
             </p>
           </div>
         </motion.div>
       </div>
+
       <Footer />
     </main>
   );
