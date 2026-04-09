@@ -236,6 +236,115 @@ export async function login(req, res) {
   }
 }
 
+export async function me(req, res) {
+  try {
+    await dbConnect();
+    const authUser = getAuthUser(req);
+    if (!authUser?.id) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const user = await User.findById(authUser.id).select('-password -loginOTP -loginOTPExpiry');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'Account is blocked. Contact support.' });
+    }
+
+    return res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar || '',
+        isVerified: user.isVerified ?? true,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function logout(req, res) {
+  try {
+    removeAuthCookie(res);
+    return res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function forgotPassword(req, res) {
+  try {
+    await dbConnect();
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email });
+    // Avoid account enumeration.
+    if (!user) {
+      return res.json({ message: 'If an account exists, a reset email has been sent.' });
+    }
+
+    const rawToken = generateResetToken();
+    const passwordResetToken = hashResetToken(rawToken);
+    const passwordResetExpiry = getResetTokenExpiry();
+
+    user.passwordResetToken = passwordResetToken;
+    user.passwordResetExpiry = passwordResetExpiry;
+    await user.save();
+
+    await sendPasswordResetEmail(user.email, rawToken);
+    return res.json({ message: 'If an account exists, a reset email has been sent.' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function resetPassword(req, res) {
+  try {
+    await dbConnect();
+    const { token, password } = req.body;
+    if (!token || !password) {
+      return res.status(400).json({ message: 'Token and password are required' });
+    }
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        message:
+          'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.',
+      });
+    }
+
+    const hashedToken = hashResetToken(token);
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpiry: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.passwordResetToken = null;
+    user.passwordResetExpiry = null;
+    user.failedLoginAttempts = 0;
+    user.lockedUntil = null;
+    user.sessionVersion = (user.sessionVersion ?? 0) + 1;
+    await user.save();
+
+    removeAuthCookie(res);
+    return res.json({ message: 'Password reset successful. Please sign in again.' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
 export function googleAuthStart(req, res) {
   if (!GOOGLE_CLIENT_ID) {
     const base = frontendBase();
