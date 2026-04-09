@@ -28,8 +28,8 @@ router.get('/api/auth/me', authController.me);
 router.post('/api/auth/logout', authController.logout);
 router.post('/api/auth/forgot-password', authController.forgotPassword);
 router.post('/api/auth/reset-password', authController.resetPassword);
-router.post('/api/auth/verify-email', authController.verifyEmail);
-router.post('/api/auth/resend-verification-otp', authController.resendVerificationOtp);
+
+
 router.get('/api/auth/google', authController.googleAuthStart);
 router.get('/api/auth/google/callback', authController.googleAuthCallback);
 

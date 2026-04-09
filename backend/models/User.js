@@ -17,11 +17,7 @@ const UserSchema = new Schema({
   joinedAt: { type: Date, default: Date.now },
   isBlocked: { type: Boolean, default: false },
   // Email verification
-  isVerified: { type: Boolean, default: false },
-  emailVerificationOTP: { type: String, default: null },
-  otpExpiry: { type: Date, default: null },
-  otpResendCount: { type: Number, default: 0 },
-  otpResendWindow: { type: Date, default: null },
+  
   // Password reset
   passwordResetToken: { type: String, default: null },
   passwordResetExpiry: { type: Date, default: null },
