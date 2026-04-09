@@ -29,24 +29,12 @@ process.env.MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
 // 🔍 DEBUG ENV (remove later)
 console.log("MONGODB_URI:", process.env.MONGODB_URI ? "Loaded ✅" : "Missing ❌");
 
-<<<<<<< HEAD
+// ✅ CORS (safe fallback)
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
 
-=======
-// ✅ CORS (safe fallback)
-app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://rentify11-aryan-s-projects-323c3d5d.vercel.app",
-    "https://rentify11.vercel.app", // 🔥 replace with your actual Vercel URL
-  ],
-  credentials: true
-}));
-
 // ✅ Stripe webhook (keep BEFORE express.json)
->>>>>>> parent of 2fe05b3 (.)
 app.post(
   '/api/webhook/stripe',
   express.raw({ type: 'application/json' }),
