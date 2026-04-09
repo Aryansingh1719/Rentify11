@@ -83,20 +83,14 @@ export async function register(req, res) {
       return res.status(500).json({ message: 'Failed to create user account' });
     }
 
-    console.log('[auth.register] Sending verification email', user.email);
-    try {
-      await sendVerificationEmail(user.email, otp, 7);
-    } catch (emailErr) {
-      console.error('[auth.register] Verification email failed', emailErr);
-      return res.status(500).json({
-        success: false,
-        message: 'User created, but failed to send verification email. Please try again.',
-      });
-    }
+    console.log('[auth.register] Triggering verification email (async)', user.email);
+    // Non-blocking: signup should return immediately.
+    // sendVerificationEmail has internal error handling.
+    sendVerificationEmail(user.email, otp, 7);
 
     return res.status(201).json({
       success: true,
-      message: 'Verification email sent successfully',
+      message: 'Verification email sent',
       redirect: '/verify-email',
       email: user.email,
       user: {
@@ -507,7 +501,8 @@ export async function resendVerificationOtp(req, res) {
       otpResendWindow: window,
     });
 
-    await sendVerificationEmail(user.email, otp, 7);
+    // Non-blocking resend
+    sendVerificationEmail(user.email, otp, 7);
     await AuditLog.create({ action: 'resend_otp', userId: user._id, email });
 
     return res.json({
