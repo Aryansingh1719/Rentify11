@@ -1,84 +1,19 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useDispatch } from 'react-redux';
-import { fetchMe } from '@/store/slices/authSlice';
-import api, { setAuthSession, clearAuthSession } from '@/lib/api';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { Mail, Loader2, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function VerifyLoginOTPPage() {
-  const searchParams = useSearchParams();
-  const emailParam = searchParams.get('email') || '';
-  const [email, setEmail] = useState(emailParam);
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const dispatch = useDispatch();
-  const inputRefs = useRef([]);
-
-  const handleOtpChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return;
-    const next = [...otp];
-    next[index] = value.slice(-1);
-    setOtp(next);
-    if (value && index < 5) inputRefs.current[index + 1]?.focus();
-  };
-
-  const handleOtpKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (!pasted) return;
-    const next = [...otp];
-    pasted.split('').forEach((c, i) => { next[i] = c; });
-    setOtp(next);
-    inputRefs.current[Math.min(pasted.length, 5)]?.focus();
-  };
-
-  const handleVerify = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      toast.error('Please enter your email');
-      return;
-    }
-    const code = otp.join('');
-    if (code.length !== 6) {
-      toast.error('Please enter the 6-digit code');
-      return;
-    }
-    setLoading(true);
-    let storedToken = false;
-    try {
-      const res = await api.post('/api/auth/verify-login-otp', { email, otp: code });
-      toast.success(res.data.message || 'Signed in!');
-      if (res.data.token) {
-        setAuthSession(res.data.token);
-        storedToken = true;
-      }
-      await dispatch(fetchMe()).unwrap();
-      if (res.data.user?.role === 'renter') {
-        router.push('/discover');
-      } else {
-        router.push('/dashboard');
-      }
-    } catch (err) {
-      if (storedToken) clearAuthSession();
-      toast.error(err.response?.data?.message || 'Verification failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const timer = setTimeout(() => router.replace('/login'), 1000);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   return (
     <main className="min-h-screen bg-background">
@@ -90,66 +25,16 @@ export default function VerifyLoginOTPPage() {
           className="max-w-md w-full bg-card rounded-[40px] shadow-xl dark:shadow-black/40 p-10 border border-border"
         >
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-black tracking-tighter text-foreground mb-2">Enter login code</h1>
-            <p className="text-muted-foreground">We sent a 6-digit code to your email</p>
+            <h1 className="text-3xl font-black tracking-tighter text-foreground mb-2">OTP login disabled</h1>
+            <p className="text-muted-foreground">Redirecting you to sign in.</p>
           </div>
 
-          <form onSubmit={handleVerify} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="verify-login-email" className="text-sm font-bold text-foreground ml-1">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <input
-                  id="verify-login-email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-input border border-border rounded-2xl focus:ring-2 focus:ring-ring transition-all outline-none text-foreground placeholder:text-muted-foreground"
-                  placeholder="name@example.com"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-foreground ml-1">Login Code</label>
-              <div
-                className="flex gap-2 justify-center"
-                onPaste={handlePaste}
-              >
-                {otp.map((digit, i) => (
-                  <input
-                    key={i}
-                    id={`verify-login-otp-${i}`}
-                    name={`otp-${i}`}
-                    ref={(el) => inputRefs.current[i] = el}
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete={i === 0 ? 'one-time-code' : 'off'}
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(i, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                    className="w-12 h-14 text-center text-xl font-bold bg-input border border-border rounded-xl focus:border-ring focus:ring-2 focus:ring-ring/20 outline-none text-foreground"
-                  />
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-xl disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="animate-spin" size={20} /> : (
-                <>
-                  Verify & Sign In <ArrowRight size={18} />
-                </>
-              )}
-            </button>
-          </form>
+          <Link
+            href="/login"
+            className="w-full inline-flex justify-center py-4 bg-primary text-primary-foreground rounded-2xl font-bold items-center gap-2 hover:opacity-90 transition-all shadow-xl"
+          >
+            Go to Sign In <ArrowRight size={18} />
+          </Link>
 
           <div className="mt-8 text-center text-sm">
             <p className="text-muted-foreground">

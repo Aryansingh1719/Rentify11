@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "users:verify-all": "node scripts/markUsersVerified.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

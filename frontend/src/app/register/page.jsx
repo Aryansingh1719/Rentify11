@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import api, { APIBaseUrl } from '@/lib/api';
+import api, { APIBaseUrl, setAuthSession, clearAuthSession } from '@/lib/api';
+import { useDispatch } from 'react-redux';
+import { fetchMe } from '@/store/slices/authSlice';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
@@ -30,6 +32,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('renter');
   const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,6 +48,7 @@ export default function RegisterPage() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
+    let storedToken = false;
 
     try {
       const res = await api.post('/api/auth/register', {
@@ -54,19 +58,15 @@ export default function RegisterPage() {
         role,
       });
 
-      const targetEmail = res.data?.email ?? email;
-      const verifyPath = `/verify-email?email=${encodeURIComponent(targetEmail)}`;
-
-      toast.success(res.data?.message || 'Check your email to verify your account');
-
-      // ✅ FIXED: Direct navigation (no startTransition)
-      // router.push(verifyPath);
-      // router.refresh(); // 🔥 ensures UI updates properly
-      setTimeout(() => {
-        router.push(verifyPath);
-      }, 100);
-      
+      if (res.data?.token) {
+        setAuthSession(res.data.token);
+        storedToken = true;
+      }
+      await dispatch(fetchMe()).unwrap();
+      toast.success(res.data?.message || 'Account created successfully');
+      router.push(res.data?.redirect || (res.data?.user?.role === 'seller' ? '/seller/dashboard' : '/dashboard'));
     } catch (err) {
+      if (storedToken) clearAuthSession();
       toast.error(err.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);

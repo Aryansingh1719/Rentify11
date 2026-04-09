@@ -30,8 +30,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [unverifiedEmail, setUnverifiedEmail] = useState(null);
-  const [resendLoading, setResendLoading] = useState(false);
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,60 +44,23 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setUnverifiedEmail(null);
     setLoading(true);
     let storedToken = false;
     try {
       const res = await api.post('/api/auth/login', { email, password });
-      if (res.data.requiresOtp) {
-        toast.success(res.data.message || 'Check your email for the login code');
-        router.push(`/verify-login-otp?email=${encodeURIComponent(res.data.email || email)}`);
-        return;
-      }
       if (res.data.token) {
         setAuthSession(res.data.token);
         storedToken = true;
       }
       await dispatch(fetchMe()).unwrap();
       toast.success('Welcome back!');
-      if (res.data.user?.role === 'renter') {
-        router.push('/discover');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push(res.data?.redirect || (res.data.user?.role === 'seller' ? '/seller/dashboard' : '/dashboard'));
     } catch (err) {
       if (storedToken) clearAuthSession();
       const data = err.response?.data;
-      if (data?.requiresVerification) {
-        setUnverifiedEmail(data?.email || email);
-        toast.error(data?.message || 'Please verify your email');
-        return;
-      }
       toast.error(data?.message || 'Login failed');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleResendVerification = async () => {
-    if (!unverifiedEmail) return;
-  
-    setResendLoading(true);
-  
-    try {
-      await api.post('/api/auth/resend-verification-otp', {
-        email: unverifiedEmail,
-      });
-  
-      toast.success('Verification code sent! Check your email.');
-  
-      // ✅ FIXED
-      router.push(`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`);
-  
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Resend failed');
-    } finally {
-      setResendLoading(false);
     }
   };
 
@@ -193,19 +154,6 @@ export default function LoginPage() {
               Continue with Google
             </a>
 
-            {unverifiedEmail && (
-              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800">
-                <p className="text-sm text-amber-800 dark:text-amber-200 mb-3">Please verify your email to sign in.</p>
-                <button
-                  type="button"
-                  onClick={handleResendVerification}
-                  disabled={resendLoading}
-                  className="w-full py-3 bg-amber-600 text-white rounded-xl font-bold text-sm hover:bg-amber-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                >
-                  {resendLoading ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Resend Verification Code'}
-                </button>
-              </div>
-            )}
           </form>
 
           <div className="mt-10 text-center text-sm">

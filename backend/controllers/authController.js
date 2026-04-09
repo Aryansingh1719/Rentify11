@@ -12,6 +12,7 @@ import { getClientInfo } from '../lib/clientInfo.js';
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_DURATION_MS = 15 * 60 * 1000;
+const ENABLE_EMAIL_VERIFICATION = process.env.ENABLE_EMAIL_VERIFICATION === 'true';
 const ENABLE_LOGIN_OTP = process.env.ENABLE_LOGIN_OTP === 'true';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -61,21 +62,27 @@ export async function register(req, res) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const otp = generateOTP();
-    const hashedOtp = await hashOTP(otp);
-    const otpExpiry = getOTPExpiry();
+    const emailVerificationEnabled = ENABLE_EMAIL_VERIFICATION;
+    const otp = emailVerificationEnabled ? generateOTP() : null;
+    const hashedOtp = emailVerificationEnabled ? await hashOTP(otp) : null;
+    const otpExpiry = emailVerificationEnabled ? getOTPExpiry() : null;
+    const normalizedRole = role || 'renter';
 
     console.log('[auth.register] Creating user', email);
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      role: role || 'renter',
-      isVerified: true, // Automatically set to true
-      emailVerificationOTP: hashedOtp,
-      otpExpiry,
-      otpResendCount: 0,
-      otpResendWindow: new Date(),
+      role: normalizedRole,
+      isVerified: !emailVerificationEnabled,
+      ...(emailVerificationEnabled
+        ? {
+            emailVerificationOTP: hashedOtp,
+            otpExpiry,
+            otpResendCount: 0,
+            otpResendWindow: new Date(),
+          }
+        : {}),
     });
 
     if (!user) {
@@ -83,16 +90,39 @@ export async function register(req, res) {
       return res.status(500).json({ message: 'Failed to create user account' });
     }
 
-    console.log('[auth.register] Triggering verification email (async)', user.email);
-    // Non-blocking: signup should return immediately.
-    // sendVerificationEmail has internal error handling.
-    sendVerificationEmail(user.email, otp, 7);
+    if (emailVerificationEnabled) {
+      console.log('[auth.register] Triggering verification email (async)', user.email);
+      // Non-blocking: signup should return immediately.
+      // sendVerificationEmail has internal error handling.
+      sendVerificationEmail(user.email, otp, 7);
+      return res.status(201).json({
+        success: true,
+        message: 'Verification email sent',
+        redirect: '/verify-email',
+        email: user.email,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isVerified: false,
+        },
+      });
+    }
+
+    const token = signToken({
+      id: user._id,
+      role: user.role,
+      sessionVersion: user.sessionVersion ?? 0,
+    });
+    setAuthCookie(res, token);
 
     return res.status(201).json({
       success: true,
-      message: 'Verification email sent',
-      redirect: '/verify-email',
+      message: 'Registration successful',
+      redirect: normalizedRole === 'seller' ? '/seller/dashboard' : '/dashboard',
       email: user.email,
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -160,8 +190,8 @@ export async function login(req, res) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Removed email verification check
-    if (ENABLE_LOGIN_OTP) {
+    // Email-OTP login is only active when email verification is explicitly enabled.
+    if (ENABLE_EMAIL_VERIFICATION && ENABLE_LOGIN_OTP) {
       const otp = generateOTP();
       const hashedOtp = await hashOTP(otp);
       const otpExpiry = new Date();
@@ -193,6 +223,7 @@ export async function login(req, res) {
     return res.json({
       message: 'Login successful',
       token,
+      redirect: user.role === 'seller' ? '/seller/dashboard' : '/dashboard',
       user: {
         id: user._id,
         name: user.name,
@@ -201,11 +232,6 @@ export async function login(req, res) {
       },
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-}
-
-// ... rest of the code remains the same ...
     return res.status(500).json({ message: error.message });
   }
 }

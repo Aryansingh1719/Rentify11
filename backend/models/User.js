@@ -17,6 +17,7 @@ const UserSchema = new Schema({
   joinedAt: { type: Date, default: Date.now },
   isBlocked: { type: Boolean, default: false },
   // Email verification
+  isVerified: { type: Boolean, default: true },
   
   // Password reset
   passwordResetToken: { type: String, default: null },

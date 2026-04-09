@@ -22,8 +22,6 @@ const router = express.Router();
 
 router.post('/api/auth/register', authController.register);
 router.post('/api/auth/login', authController.login);
-router.post('/api/auth/login-otp', authController.loginOtp);
-router.post('/api/auth/verify-login-otp', authController.verifyLoginOtp);
 router.get('/api/auth/me', authController.me);
 router.post('/api/auth/logout', authController.logout);
 router.post('/api/auth/forgot-password', authController.forgotPassword);
