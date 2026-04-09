@@ -53,7 +53,9 @@ export async function getAuthUser(req) {
   const user = await User.findById(decoded.id).select('-password');
   if (!user) return null;
 
-  if (user.sessionVersion !== (decoded.sessionVersion ?? 0)) return null;
+  const userSessionVersion = user.sessionVersion ?? 0;
+  const tokenSessionVersion = decoded.sessionVersion ?? 0;
+  if (userSessionVersion !== tokenSessionVersion) return null;
 
   return user;
 }
